@@ -6,24 +6,6 @@ from youtube_dl.database.models.Season import Season
 from youtube_dl.database.models.VideoInfo import VideoInfo
 
 
-# class Episode(Base):
-#     __tablename__ = 'episodes'
-#
-#     __table_args__ = (
-#         UniqueConstraint('season_id', 'episode_number', name='season_episode_constraint'),
-#     )
-#
-#     id = Column(Integer, primary_key=True)
-#     episode_number = Column(Integer, nullable=False)
-#     episode_name = Column(String, nullable=False)
-#     episode_id = Column(String, nullable=True)
-#
-#     season_id = Column(Integer, ForeignKey('seasons.id'))
-#     season = relationship(Season, back_populates='episodes')
-#
-#     # This will hold the relationship to VideoInfo
-#     video_infos = relationship(VideoInfo, back_populates='episode')
-
 class Episode(Base):
     __tablename__ = 'episodes'
     __table_args__ = (

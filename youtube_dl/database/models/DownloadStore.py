@@ -6,7 +6,7 @@ from youtube_dl.database.models.VideoInfo import VideoInfo
 
 
 class DownloadStore(Base):
-    __tablename__ = 'downloads'
+    __tablename__ = 'download_store'
 
     id = Column(Integer, primary_key=True)
     url = Column(String, nullable=False)

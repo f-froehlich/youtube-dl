@@ -8,17 +8,10 @@ class Subtitle(Base):
     __tablename__ = 'subtitles'
 
     id = Column(Integer, primary_key=True)
-    url = Column(String, nullable=True)
-    ext = Column(String, nullable=True)
-    locale = Column(String, nullable=True)
+    url = Column(String, nullable=False)
+    ext = Column(String, nullable=False)
+    locale = Column(String, nullable=False)
+    content = Column(String, nullable=True)
 
     video_info_id = Column(Integer, ForeignKey('video_info.id'))
     video_info = relationship('VideoInfo', back_populates='subtitles')
-
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor that sets properties if they exist in kwargs.
-        """
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)

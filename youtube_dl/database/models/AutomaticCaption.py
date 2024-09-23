@@ -8,9 +8,10 @@ class AutomaticCaption(Base):
     __tablename__ = 'automatic_captions'
 
     id = Column(Integer, primary_key=True)
-    url = Column(String, nullable=True)
-    ext = Column(String, nullable=True)
-    locale = Column(String, nullable=True)
+    url = Column(String, nullable=False)
+    ext = Column(String, nullable=False)
+    locale = Column(String, nullable=False)
+    content = Column(String, nullable=True)
 
     video_info_id = Column(Integer, ForeignKey('video_info.id'))
     video_info = relationship('VideoInfo', back_populates='automatic_captions')

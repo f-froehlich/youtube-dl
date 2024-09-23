@@ -119,6 +119,10 @@ setup(
     # test_suite = 'nose.collector',
     # test_requires = ['nosetest'],
 
+    install_requires=[
+        'sqlalchemy>=2.0'
+    ],
+
     classifiers=[
         'Topic :: Multimedia :: Video',
         'Development Status :: 5 - Production/Stable',

@@ -2,6 +2,7 @@ import re
 
 from youtube_dl.database.DatabaseService import DatabaseService
 from youtube_dl.database.models.Episode import Episode
+from youtube_dl.database.models.Season import Season
 
 
 class EpisodeService(DatabaseService):
@@ -14,10 +15,11 @@ class EpisodeService(DatabaseService):
 
         season = self.__season_service.create_or_get_season(series_name, season_name, season_number)
 
-        episode_query = self._session.query(Episode) \
-            .filter(Episode.episode_name == episode_name and Episode.season == season)
-
-        episode = episode_query.one_or_none()
+        episode = self._session.query(Episode) \
+            .join(Season, Season.id == Episode.season_id) \
+            .filter(Episode.episode_name == episode_name) \
+            .filter(Episode.season_id == season.id) \
+            .first()
 
         if episode is None:
             episode = Episode(episode_number=episode_number, episode_name=episode_name, season=season)
@@ -34,7 +36,8 @@ class EpisodeService(DatabaseService):
             return None
 
         if None is episode_name and None is episode_number:
-            return None
+            episode_number = 0
+            episode_name = 'Season 0'
         elif None is episode_number and None is not episode_name:
             episode_match = re.search(r"(\d+)", episode_name)
             if episode_match:

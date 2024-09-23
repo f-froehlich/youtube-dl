@@ -24,6 +24,11 @@ import tokenize
 import traceback
 import random
 
+from sqlalchemy import select
+
+from youtube_dl.database.models.DownloadStore import DownloadStore
+from .database.Database import Database
+
 try:
     from ssl import OPENSSL_VERSION
 except ImportError:
@@ -2036,6 +2041,16 @@ class YoutubeDL(object):
             'video description', info_dict,
             replace_extension(filename, 'info.json', info_dict.get('ext')))
 
+        self.to_screen('[FF_info] VIDEO %r' % info_dict.get('webpage_url'))
+        with Database() as session:
+            query = select(DownloadStore).where(DownloadStore.url == info_dict.get('webpage_url'))
+
+            results = session.get_session().execute(query).fetchall()
+            if len(results) > 0:
+                self.to_screen('[FF_info] Video already downloaded %r' % info_dict.get('webpage_url'))
+                return #TODO @FF
+
+
         self._write_thumbnails(info_dict, filename)
 
         if not self.params.get('skip_download', False):
@@ -2101,10 +2116,13 @@ class YoutubeDL(object):
                     # Ensure filename always has a correct extension for successful merge
                     filename = '%s.%s' % (filename_wo_ext, info_dict['ext'])
                     if os.path.exists(encodeFilename(filename)):
+                        info_dict['_file_exists'] = True
                         self.to_screen(
                             '[download] %s has already been downloaded and '
                             'merged' % filename)
                     else:
+                        info_dict['_file_exists'] = False
+                        downloaded_formats = []
                         for f in requested_formats:
                             new_info = dict(info_dict)
                             new_info.update(f)
@@ -2115,12 +2133,26 @@ class YoutubeDL(object):
                                 return
                             downloaded.append(fname)
                             partial_success = dl(fname, new_info)
+                            if partial_success:
+                                print("_______PS", fname)
+                                downloaded_format = dict(f)
+                                downloaded_format['_filename'] = fname
+                                downloaded_formats.append(downloaded_format)
                             success = success and partial_success
                         info_dict['__postprocessors'] = postprocessors
                         info_dict['__files_to_merge'] = downloaded
+                        info_dict['__downloaded_formats'] = downloaded_formats
                 else:
                     # Just a single file
-                    success = dl(filename, info_dict)
+                    if os.path.exists(encodeFilename(filename)):
+                        info_dict['_file_exists'] = True
+                        self.to_screen(
+                            '[download] %s has already been downloaded and '
+                            'merged' % filename)
+                        success = True
+                    else:
+                        info_dict['_file_exists'] = False
+                        success = dl(filename, info_dict)
             except (compat_urllib_error.URLError, compat_http_client.HTTPException, socket.error) as err:
                 self.report_error('unable to download video data: %s' % error_to_compat_str(err))
                 return
@@ -2199,6 +2231,12 @@ class YoutubeDL(object):
                     self.report_error('postprocessing: %s' % error_to_compat_str(err))
                     return
                 self.record_download_archive(info_dict)
+
+                with Database() as session:
+                    video_info = session.create_video_info_from_info_dict(info_dict)
+                    new_download = DownloadStore(url=info_dict.get('webpage_url'), data=json.dumps(repr(info_dict)), video_info=video_info)
+                    session.get_session().add(new_download)
+
                 # avoid possible nugatory search for further items (PR #26638)
                 if self._num_downloads >= max_downloads:
                     raise MaxDownloadsReached()
